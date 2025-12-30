@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart City Command Center (Standalone)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Glassmorphism Utilities */
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Animations */
+        @keyframes pulse-soft {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+    </style>
+</head>
+
+<body class="flex h-screen overflow-hidden text-slate-800 selection:bg-indigo-100 font-sans">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-950 text-white flex flex-col border-r border-slate-800 shadow-2xl z-20">
+        <div class="p-6 flex items-center space-x-2 border-b border-slate-900 bg-slate-950">
+            <i data-lucide="zap" class="text-yellow-400 w-8 h-8 fill-yellow-400/20"></i>
+            <div>
+                <span class="text-xl font-bold tracking-tight block leading-none">LUMI<span
+                        class="text-yellow-400">SMART</span></span>
+                <span class="text-[10px] text-slate-500 uppercase tracking-widest">Enterprise</span>
+            </div>
+        </div>
+        <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+            <div class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider"> monitor </div>
+            <button onclick="showView('map')" id="nav-map"
+                class="w-full flex items-center space-x-3 p-3 bg-indigo-600 rounded-lg text-white shadow-lg shadow-indigo-900/20 transform hover:scale-105 transition-all group">
+                <i data-lucide="map" class="w-5 h-5 group-hover:animate-pulse"></i>
+                <span class="font-medium">Live Map</span>
+            </button>
+            <button onclick="showView('analytics')" id="nav-analytics"
+                class="w-full flex items-center space-x-3 p-3 hover:bg-slate-900 rounded-lg text-slate-400 transition-colors">
+                <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                <span>Analytics</span>
+            </button>
+            <div class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6"> manage </div>
+            <button onclick="showView('technicians')" id="nav-technicians"
+                class="w-full flex items-center space-x-3 p-3 hover:bg-slate-900 rounded-lg text-slate-400 transition-colors">
+                <i data-lucide="users" class="w-5 h-5"></i>
+                <span>Technicians</span>
+            </button>
+            <button onclick="showView('config')" id="nav-config"
+                class="w-full flex items-center space-x-3 p-3 hover:bg-slate-900 rounded-lg text-slate-400 transition-colors">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+                <span>Configuration</span>
+            </button>
+        </nav>
+
+        <!-- Environment Control -->
+        <div class="p-4 bg-slate-900 border-t border-slate-800">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-slate-400 font-bold uppercase">Simulation Time</span>
+                <span id="cycle-icon"><i data-lucide="moon" class="w-4 h-4 text-indigo-400"></i></span>
+            </div>
+            <input type="range" min="0" max="23" value="2"
+                class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                id="time-slider">
+            <div class="flex justify-between text-[10px] text-slate-500 mt-1 font-mono">
+                <span>00:00</span>
+                <span id="time-val" class="text-indigo-400 font-bold">02:00</span>
+                <span>23:00</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 bg-slate-100 relative">
+
+        <!-- Header -->
+        <header
+            class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm z-10 sticky top-0">
+            <div class="flex items-center space-x-4">
+                <div
+                    class="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-full border border-green-200 text-xs font-bold uppercase tracking-wide">
+                    <span class="relative flex h-2 w-2">
+                        <span
+                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                    Real-Time Connection
+                </div>
+                <span class="text-xs text-slate-400 hidden sm:inline font-mono">LATency: 24ms</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="p-2 hover:bg-slate-100 rounded-full relative transition-colors">
+                    <i data-lucide="bell" class="w-5 h-5 text-slate-600"></i>
+                    <span class="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full animate-bounce"></span>
+                </button>
+                <div class="text-right hidden md:block">
+                    <div class="text-sm font-bold text-slate-700">Sagnick Das</div>
+                    <div class="text-xs text-slate-500">Core Main App Manager</div>
+                </div>
+                <div onclick="showToast('Logged in as: Sagnick Das')"
+                    class="h-9 w-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg cursor-pointer ring-2 ring-indigo-100 active:scale-90 transition-transform select-none"
+                    title="View Profile">
+                    SD
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-auto p-6 scroll-smooth">
+
+            <!-- VIEW: LIVE MAP (Default) -->
+            <div id="view-map" class="space-y-6 view-section">
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div
+                        class="bg-white p-5 rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-slate-100 group hover:border-indigo-100 transition-all">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Health Score
+                                </p>
+                                <h3 class="text-3xl font-black text-slate-800 mt-1">98.2%</h3>
+                            </div>
+                            <div
+                                class="p-2 bg-green-50 rounded-lg text-green-600 group-hover:bg-green-100 transition-colors">
+                                <i data-lucide="activity" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="mt-2 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                            <div class="bg-green-500 h-full rounded-full" style="width: 98.2%"></div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-white p-5 rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-slate-100 group hover:border-red-100 transition-all">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Active Alerts
+                                </p>
+                                <h3 class="text-3xl font-black text-slate-800 mt-1" id="stat-fault">0</h3>
+                            </div>
+                            <div class="p-2 bg-red-50 rounded-lg text-red-600 group-hover:bg-red-100 transition-colors">
+                                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2 font-medium">Requires immediate attention</p>
+                    </div>
+
+                    <div
+                        class="bg-white p-5 rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-slate-100 group hover:border-yellow-100 transition-all">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Power Usage</p>
+                                <h3 class="text-3xl font-black text-slate-800 mt-1"><span id="power-val">12.4</span>
+                                    <span class="text-sm font-medium text-slate-400">kW</span></h3>
+                            </div>
+                            <div
+                                class="p-2 bg-yellow-50 rounded-lg text-yellow-600 group-hover:bg-yellow-100 transition-colors">
+                                <i data-lucide="zap" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-center mt-2 text-xs text-green-600 font-bold">
+                            <i data-lucide="arrow-down" class="w-3 h-3"></i> 34% vs Traditional
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-indigo-600 p-5 rounded-xl shadow-lg shadow-indigo-200 text-white relative overflow-hidden group">
+                        <div
+                            class="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full group-hover:scale-150 transition-transform duration-700">
+                        </div>
+                        <div class="relative z-10">
+                            <p class="text-indigo-200 text-xs font-semibold uppercase tracking-wider">Total Savings</p>
+                            <h3 class="text-3xl font-black mt-1">₹ 1.2L</h3>
+                            <p class="text-xs text-indigo-200 mt-2 font-medium">Projected this month</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Split -->
+                <div class="flex flex-col lg:flex-row gap-6 h-[700px]">
+                    <!-- Map Panel -->
+                    <div
+                        class="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-1 flex flex-col relative group overflow-hidden">
+                        <div
+                            class="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur px-4 py-2 rounded-lg shadow-sm border border-slate-100 flex items-center gap-3">
+                            <span class="flex h-3 w-3 relative">
+                                <span
+                                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                            </span>
+                            <div>
+                                <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wide">Live Feed</h2>
+                                <p class="text-[10px] text-slate-400">Updating every 2s</p>
+                            </div>
+                        </div>
+
+                        <div
+                            class="flex-1 bg-slate-900 rounded-xl relative overflow-hidden flex items-center justify-center shadow-inner">
+                            <div
+                                class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20">
+                            </div>
+
+                            <!-- Grid Container -->
+                            <div id="pole-grid"
+                                class="pole-grid w-full h-full p-8 relative z-10 grid grid-cols-10 gap-4 content-center justify-items-center">
+                                <!-- JS Inject -->
+                            </div>
+
+                            <!-- Legend -->
+                            <div
+                                class="absolute bottom-4 right-4 bg-slate-950/90 backdrop-blur p-4 rounded-xl text-xs text-white space-y-3 border border-slate-800 shadow-2xl w-48">
+                                <div
+                                    class="font-bold text-slate-400 uppercase tracking-widest text-[10px] mb-2 border-b border-slate-800 pb-1">
+                                    Status Legend</div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,1)]">
+                                    </div><span>Active (High)</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-2 h-2 rounded-full bg-indigo-500 opacity-60"></div><span>Dimmed
+                                        (Idle)</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-2 h-2 rounded-full border border-slate-500"></div><span
+                                        class="text-slate-400">Daylight Off</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div><span>Critical
+                                        Fault</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Control Panel (Dynamic) -->
+                    <div
+                        class="w-full lg:w-[400px] bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                        <!-- Empty State -->
+                        <div id="empty-state"
+                            class="flex-1 flex flex-col items-center justify-center text-slate-400 text-sm text-center p-8 bg-slate-50/50">
+                            <div
+                                class="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                                <i data-lucide="server" class="w-10 h-10 text-slate-300"></i>
+                            </div>
+                            <h3 class="text-slate-800 font-bold text-lg mb-2">Command Center Ready</h3>
+                            <p class="max-w-[200px] leading-relaxed">Select a device from the map to access telemetry
+                                and manual override controls.</p>
+                        </div>
+
+                        <!-- Active State -->
+                        <div id="detail-content" class="hidden flex-1 flex flex-col h-full">
+                            <div class="p-6 border-b border-slate-100 bg-slate-50/50">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <div
+                                            class="text-[10px] items-center flex gap-1 font-bold text-slate-400 uppercase tracking-widest mb-1">
+                                            <i data-lucide="cpu" class="w-3 h-3"></i> Device ID
+                                        </div>
+                                        <h2 class="text-2xl font-mono font-black text-slate-800 tracking-tight"
+                                            id="detail-id">POLE-000</h2>
+                                    </div>
+                                    <div id="detail-status-badge"></div>
+                                </div>
+                                <!-- Quick Stats -->
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div class="bg-white p-2 rounded-lg border border-slate-100 text-center shadow-sm">
+                                        <div class="text-[10px] text-slate-400 font-bold uppercase">Battery</div>
+                                        <div class="text-sm font-bold text-slate-800 mt-1" id="detail-battery-val">--
+                                        </div>
+                                    </div>
+                                    <div class="bg-white p-2 rounded-lg border border-slate-100 text-center shadow-sm">
+                                        <div class="text-[10px] text-slate-400 font-bold uppercase">Temp</div>
+                                        <div class="text-sm font-bold text-slate-800 mt-1">32°C</div>
+                                    </div>
+                                    <div class="bg-white p-2 rounded-lg border border-slate-100 text-center shadow-sm">
+                                        <div class="text-[10px] text-slate-400 font-bold uppercase">Signal</div>
+                                        <div class="text-sm font-bold text-green-600 mt-1">4G</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-6 flex-1 overflow-y-auto space-y-8">
+
+                                <!-- Lux Control -->
+                                <div>
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                            <i data-lucide="sun" class="w-4 h-4 text-orange-500"></i> Brightness Output
+                                        </label>
+                                        <span class="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600"
+                                            id="lux-percent">AUTO</span>
+                                    </div>
+                                    <input type="range"
+                                        class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-not-allowed opacity-50 transition-all accent-orange-500"
+                                        id="lux-slider" disabled>
+                                    <div class="flex gap-2 mt-3">
+                                        <button onclick="setMode('AUTO')"
+                                            class="flex-1 py-1.5 text-xs font-bold border border-indigo-200 bg-indigo-50 text-indigo-700 rounded hover:bg-indigo-100 active:scale-95 transition-transform"
+                                            id="btn-auto">AUTO</button>
+                                        <button onclick="setMode('MANUAL')"
+                                            class="flex-1 py-1.5 text-xs font-bold border border-slate-200 text-slate-600 rounded hover:bg-slate-50 active:scale-95 transition-transform"
+                                            id="btn-manual">MANUAL</button>
+                                    </div>
+                                </div>
+
+                                <!-- Maintenance Actions -->
+                                <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                    <h4
+                                        class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-200 pb-2">
+                                        Operations</h4>
+
+                                    <div class="space-y-3">
+                                        <button onclick="triggerMaintenance()" id="btn-maintain"
+                                            class="w-full flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg hover:border-indigo-300 hover:shadow-md transition-all group group-disabled:opacity-50">
+                                            <div class="flex items-center gap-3">
+                                                <div
+                                                    class="p-2 bg-indigo-50 text-indigo-600 rounded-md group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                                    <i data-lucide="wrench" class="w-4 h-4"></i>
+                                                </div>
+                                                <div class="text-left">
+                                                    <div class="text-sm font-bold text-slate-700">Dispatch Technician
+                                                    </div>
+                                                    <div class="text-[10px] text-slate-400">Create ticket #49221</div>
+                                                </div>
+                                            </div>
+                                            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i>
+                                        </button>
+
+                                        <button onclick="togglePower()" id="btn-power"
+                                            class="w-full flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg hover:border-red-300 hover:shadow-md transition-all group">
+                                            <div class="flex items-center gap-3">
+                                                <div
+                                                    class="p-2 bg-red-50 text-red-600 rounded-md group-hover:bg-red-600 group-hover:text-white transition-colors">
+                                                    <i data-lucide="power" class="w-4 h-4"></i>
+                                                </div>
+                                                <div class="text-left">
+                                                    <div class="text-sm font-bold text-slate-700">Emergency Reset</div>
+                                                    <div class="text-[10px] text-slate-400">Hard reboot MCU</div>
+                                                </div>
+                                            </div>
+                                            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Footer -->
+                            <div
+                                class="p-4 bg-slate-50 border-t border-slate-200 text-[10px] text-slate-400 text-center">
+                                Secure Encrypted Connection • MQTT TLS v1.3
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: ANALYTICS -->
+            <div id="view-analytics" class="hidden space-y-6 view-section">
+                <h2 class="text-2xl font-bold text-slate-800">Advanced Analytics - Hyderabad Zone</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-sm font-bold text-slate-500 mb-4 uppercase">Weekly Energy Savings</h3>
+                        <!-- Simulated Bar Chart -->
+                        <div class="flex items-end space-x-4 h-64 border-b border-slate-100 pb-4">
+                            <div class="flex-1 bg-indigo-100 rounded-t-lg relative group h-[40%]">
+                                <div
+                                    class="absolute -top-8 w-full text-center text-xs text-slate-500 opacity-0 group-hover:opacity-100 font-bold">
+                                    40%</div>
+                            </div>
+                            <div class="flex-1 bg-indigo-200 rounded-t-lg relative group h-[60%]">
+                                <div
+                                    class="absolute -top-8 w-full text-center text-xs text-slate-500 opacity-0 group-hover:opacity-100 font-bold">
+                                    60%</div>
+                            </div>
+                            <div class="flex-1 bg-indigo-300 rounded-t-lg relative group h-[55%]">
+                                <div
+                                    class="absolute -top-8 w-full text-center text-xs text-slate-500 opacity-0 group-hover:opacity-100 font-bold">
+                                    55%</div>
+                            </div>
+                            <div class="flex-1 bg-indigo-400 rounded-t-lg relative group h-[70%]">
+                                <div
+                                    class="absolute -top-8 w-full text-center text-xs text-slate-500 opacity-0 group-hover:opacity-100 font-bold">
+                                    70%</div>
+                            </div>
+                            <div class="flex-1 bg-indigo-500 rounded-t-lg relative group h-[85%]">
+                                <div
+                                    class="absolute -top-8 w-full text-center text-xs text-slate-500 opacity-0 group-hover:opacity-100 font-bold">
+                                    85%</div>
+                            </div>
+                            <div class="flex-1 bg-indigo-600 rounded-t-lg relative group h-[90%]">
+                                <div
+                                    class="absolute -top-8 w-full text-center text-xs text-slate-500 opacity-0 group-hover:opacity-100 font-bold">
+                                    90%</div>
+                            </div>
+                            <div
+                                class="flex-1 bg-indigo-700 rounded-t-lg relative group h-[95%] shadow-lg shadow-indigo-300">
+                                <div class="absolute -top-8 w-full text-center text-xs text-indigo-700 font-bold">TODAY
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between mt-2 text-xs text-slate-400 font-mono">
+                            <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-sm font-bold text-slate-500 mb-4 uppercase">Efficiency Heatmap</h3>
+                        <div class="grid grid-cols-5 gap-2 h-64">
+                            <!-- Simulated Heatmap Grid -->
+                            <div class="bg-green-100 rounded transition-colors hover:bg-green-200"></div>
+                            <div class="bg-green-200 rounded transition-colors hover:bg-green-300"></div>
+                            <div class="bg-green-300 rounded transition-colors hover:bg-green-400"></div>
+                            <div class="bg-green-400 rounded transition-colors hover:bg-green-500"></div>
+                            <div class="bg-green-500 rounded transition-colors hover:bg-green-600"></div>
+                            <div class="bg-green-200 rounded transition-colors hover:bg-green-300"></div>
+                            <div class="bg-green-300 rounded transition-colors hover:bg-green-400"></div>
+                            <div class="bg-green-500 rounded transition-colors hover:bg-green-600"></div>
+                            <div class="bg-green-400 rounded transition-colors hover:bg-green-500"></div>
+                            <div class="bg-green-600 rounded transition-colors hover:bg-green-700"></div>
+                            <div class="bg-green-100 rounded transition-colors hover:bg-green-200"></div>
+                            <div class="bg-red-400 rounded transition-colors hover:bg-red-500 cursor-help"
+                                title="High Failure Rate Zone"></div>
+                            <div class="bg-green-200 rounded transition-colors hover:bg-green-300"></div>
+                            <div class="bg-green-300 rounded transition-colors hover:bg-green-400"></div>
+                            <div class="bg-green-400 rounded transition-colors hover:bg-green-500"></div>
+                            <div class="bg-green-100 rounded transition-colors hover:bg-green-200"></div>
+                            <div class="bg-green-200 rounded transition-colors hover:bg-green-300"></div>
+                            <div class="bg-green-100 rounded transition-colors hover:bg-green-200"></div>
+                            <div class="bg-green-200 rounded transition-colors hover:bg-green-300"></div>
+                            <div class="bg-green-500 rounded transition-colors hover:bg-green-600"></div>
+                            <div class="bg-green-50 rounded transition-colors hover:bg-green-100"></div>
+                            <div class="bg-green-100 rounded transition-colors hover:bg-green-200"></div>
+                            <div class="bg-green-200 rounded transition-colors hover:bg-green-300"></div>
+                            <div class="bg-green-300 rounded transition-colors hover:bg-green-400"></div>
+                            <div class="bg-green-400 rounded transition-colors hover:bg-green-500"></div>
+                        </div>
+                        <div class="flex justify-between items-center mt-4 text-xs text-slate-500">
+                            <span>Low Efficiency</span>
+                            <div class="w-full h-1 bg-gradient-to-r from-green-50 to-green-600 mx-3 rounded-full"></div>
+                            <span>High Efficiency</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: TECHNICIANS -->
+            <div id="view-technicians" class="hidden view-section">
+                <!-- AI Managing Team -->
+                <div class="mb-8">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="brain-circuit" class="w-5 h-5 text-indigo-600"></i>
+                        AI Managing System
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div
+                            class="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                            <div
+                                class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs ring-2 ring-white shadow-sm">
+                                SP</div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-sm">Shiva Prasad Reddy</div>
+                                <div class="text-[10px] text-slate-500 uppercase tracking-wide">System Architect</div>
+                                <div class="flex items-center gap-1 mt-1"><span
+                                        class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> <span
+                                        class="text-[10px] text-green-600 font-bold">Active</span></div>
+                            </div>
+                        </div>
+                        <div
+                            class="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                            <div
+                                class="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold text-xs ring-2 ring-white shadow-sm">
+                                YR</div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-sm">Yaswanth Reddy</div>
+                                <div class="text-[10px] text-slate-500 uppercase tracking-wide">AI Model Lead</div>
+                                <div class="flex items-center gap-1 mt-1"><span
+                                        class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> <span
+                                        class="text-[10px] text-green-600 font-bold">Active</span></div>
+                            </div>
+                        </div>
+                        <div
+                            class="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                            <div
+                                class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs ring-2 ring-white shadow-sm">
+                                HR</div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-sm">Hemanth Roa</div>
+                                <div class="text-[10px] text-slate-500 uppercase tracking-wide">Data Infrastructure
+                                </div>
+                                <div class="flex items-center gap-1 mt-1"><span
+                                        class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> <span
+                                        class="text-[10px] text-green-600 font-bold">Active</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i data-lucide="hard-hat" class="w-5 h-5 text-slate-600"></i>
+                    Field Technicians (Hyderabad)
+                </h2>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr
+                                class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase tracking-widest">
+                                <th class="p-4">Staff ID</th>
+                                <th class="p-4">Name</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4">Assigned Wards</th>
+                                <th class="p-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm text-slate-600">
+                            <!-- Existing -->
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                <td class="p-4 font-mono text-slate-400">T-1024</td>
+                                <td class="p-4 font-bold text-slate-800 flex items-center gap-2">
+                                    <div
+                                        class="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500">
+                                        RK</div>
+                                    Ramesh Kumar
+                                </td>
+                                <td class="p-4"><span
+                                        class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border border-green-200">Available</span>
+                                </td>
+                                <td class="p-4">Gachibowli, Hitech City</td>
+                                <td class="p-4"><button
+                                        class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline"
+                                        onclick="showToast('Task Assigned to Ramesh')">Assign Task</button></td>
+                            </tr>
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                <td class="p-4 font-mono text-slate-400">T-1088</td>
+                                <td class="p-4 font-bold text-slate-800 flex items-center gap-2">
+                                    <div
+                                        class="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500">
+                                        SR</div>
+                                    Suresh Reddy
+                                </td>
+                                <td class="p-4"><span
+                                        class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border border-orange-200">On
+                                        Job</span></td>
+                                <td class="p-4">Banjara Hills</td>
+                                <td class="p-4"><button
+                                        class="text-slate-400 cursor-not-allowed font-medium">Busy</button></td>
+                            </tr>
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                <td class="p-4 font-mono text-slate-400">T-2001</td>
+                                <td class="p-4 font-bold text-slate-800 flex items-center gap-2">
+                                    <div
+                                        class="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500">
+                                        AD</div>
+                                    Anita Desai
+                                </td>
+                                <td class="p-4"><span
+                                        class="bg-slate-100 text-slate-500 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border border-slate-200">Offline</span>
+                                </td>
+                                <td class="p-4">Jubilee Hills</td>
+                                <td class="p-4"><button
+                                        class="text-slate-400 cursor-not-allowed font-medium">Offline</button></td>
+                            </tr>
+
+                            <!-- New Technicians -->
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                <td class="p-4 font-mono text-slate-400">T-3044</td>
+                                <td class="p-4 font-bold text-slate-800 flex items-center gap-2">
+                                    <div
+                                        class="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500">
+                                        VS</div>
+                                    Vikram Singh
+                                </td>
+                                <td class="p-4"><span
+                                        class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border border-green-200">Available</span>
+                                </td>
+                                <td class="p-4">Secunderabad</td>
+                                <td class="p-4"><button
+                                        class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline"
+                                        onclick="showToast('Task Assigned to Vikram')">Assign Task</button></td>
+                            </tr>
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                <td class="p-4 font-mono text-slate-400">T-3055</td>
+                                <td class="p-4 font-bold text-slate-800 flex items-center gap-2">
+                                    <div
+                                        class="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500">
+                                        PS</div>
+                                    Priya Sharma
+                                </td>
+                                <td class="p-4"><span
+                                        class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border border-orange-200">On
+                                        Job</span></td>
+                                <td class="p-4">Charminar</td>
+                                <td class="p-4"><button
+                                        class="text-slate-400 cursor-not-allowed font-medium">Busy</button></td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="p-4 font-mono text-slate-400">T-3100</td>
+                                <td class="p-4 font-bold text-slate-800 flex items-center gap-2">
+                                    <div
+                                        class="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500">
+                                        RV</div>
+                                    Rahul Verma
+                                </td>
+                                <td class="p-4"><span
+                                        class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border border-green-200">Available</span>
+                                </td>
+                                <td class="p-4">Cyber Towers</td>
+                                <td class="p-4"><button
+                                        class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline"
+                                        onclick="showToast('Task Assigned to Rahul')">Assign Task</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VIEW: CONFIG -->
+            <div id="view-config" class="hidden view-section max-w-2xl">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">System Configuration</h2>
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200 space-y-8">
+
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2"><i data-lucide="globe"
+                                class="w-5 h-5 text-indigo-500"></i> Global Lighting Policy</h3>
+                        <p class="text-sm text-slate-500 mb-4">Set baseline behavior for all Hyderabad poles.</p>
+                        <div class="space-y-4">
+                            <label
+                                class="flex items-center justify-between p-4 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                                <div>
+                                    <div class="font-bold text-slate-700">Adaptive "Follow-Me" Lighting</div>
+                                    <div class="text-xs text-slate-400">Lights brighten only when motion is detected
+                                    </div>
+                                </div>
+                                <input type="checkbox" checked class="w-5 h-5 accent-indigo-600 rounded">
+                            </label>
+                            <label
+                                class="flex items-center justify-between p-4 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                                <div>
+                                    <div class="font-bold text-slate-700">Dark Sky Compliance</div>
+                                    <div class="text-xs text-slate-400">Limit max output to 80% to reduce light
+                                        pollution</div>
+                                </div>
+                                <input type="checkbox" class="w-5 h-5 accent-indigo-600 rounded">
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2"><i
+                                data-lucide="sliders" class="w-5 h-5 text-indigo-500"></i> Operational Thresholds</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-slate-500 uppercase">Min Battery Level</label>
+                                <div class="relative mt-1">
+                                    <input type="number" value="20"
+                                        class="w-full p-2 pl-3 border border-slate-300 rounded font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                                    <span class="absolute right-3 top-2 text-slate-400 text-sm font-bold">%</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-500 uppercase">Emergency Lux %</label>
+                                <div class="relative mt-1">
+                                    <input type="number" value="100"
+                                        class="w-full p-2 pl-3 border border-slate-300 rounded font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                                    <span class="absolute right-3 top-2 text-slate-400 text-sm font-bold">%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 border-t border-slate-100 flex justify-end gap-3">
+                        <button class="px-4 py-2 text-slate-500 font-bold text-sm hover:text-slate-700">Reset
+                            Defaults</button>
+                        <button
+                            class="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all active:scale-95"
+                            onclick="showToast('Configuration Saved')">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-6 right-6 transform translate-y-24 opacity-0 transition-all duration-500 z-50">
+        <div
+            class="bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 border border-slate-700">
+            <div class="bg-indigo-500/20 p-2 rounded-full"><i data-lucide="check-circle"
+                    class="w-5 h-5 text-indigo-400"></i></div>
+            <div>
+                <h4 class="font-bold text-sm">Action Completed</h4>
+                <p class="text-xs text-slate-400" id="toast-msg"> Technician dispatched successfully.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // --- NAVIGATION LOGIC ---
+        function showView(viewName) {
+            // Hide all
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            // Show target
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+
+            // Reset Sidebar Buttons
+            ['map', 'analytics', 'technicians', 'config'].forEach(v => {
+                const btn = document.getElementById(`nav-${v}`);
+                if (v === viewName) {
+                    // Active Style
+                    btn.className = "w-full flex items-center space-x-3 p-3 bg-indigo-600 rounded-lg text-white shadow-lg shadow-indigo-900/20 transform hover:scale-105 transition-all group";
+                } else {
+                    // Inactive Style
+                    btn.className = "w-full flex items-center space-x-3 p-3 hover:bg-slate-900 rounded-lg text-slate-400 transition-colors";
+                }
+            });
+        }
+
+        // --- STATE ---
+        const GRID_SIZE = 70;
+        let poles = [];
+        let selectedPoleId = null;
+        let isManualMode = false;
+        let currentTime = 2; // Hour of day
+
+        // --- INIT ---
+        function init() {
+            // Restore or Create
+            const saved = localStorage.getItem('poles_v2');
+            if (saved) {
+                poles = JSON.parse(saved);
+            } else {
+                for (let i = 0; i < GRID_SIZE; i++) {
+                    poles.push({
+                        id: `POLE-${1000 + i}`,
+                        status: Math.random() > 0.9 ? 'fault' : 'healthy',
+                        battery: Math.floor(Math.random() * 40) + 60,
+                        lux: 0,
+                        manualOverride: null
+                    });
+                }
+            }
+            renderGrid();
+            updateTime(currentTime);
+        }
+
+        // --- RENDER ---
+        function renderGrid() {
+            const grid = document.getElementById('pole-grid');
+            if (!grid) return; // Might be hidden if not on map view, but data still updates
+            grid.innerHTML = '';
+
+            poles.forEach(pole => {
+                const el = document.createElement('div');
+                el.className = getPoleClass(pole);
+                el.onclick = () => selectPole(pole.id);
+                if (selectedPoleId === pole.id) {
+                    el.classList.add('ring-4', 'ring-white', 'shadow-2xl', 'scale-125', 'z-50', 'relative');
+                    el.classList.remove('opacity-60');
+                }
+                grid.appendChild(el);
+            });
+
+            // Update KPI
+            const faults = poles.filter(p => p.status === 'fault').length;
+            const faultDisplay = document.getElementById('stat-fault');
+            if (faultDisplay) faultDisplay.innerText = faults;
+
+            // Save state
+            localStorage.setItem('poles_v2', JSON.stringify(poles));
+        }
+
+        function getPoleClass(pole) {
+            let base = "w-3 h-3 rounded-full transition-all duration-500 cursor-pointer hover:scale-150 ";
+
+            if (pole.status === 'fault') return base + "bg-red-500 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.8)]";
+            if (pole.status === 'maintenance') return base + "bg-orange-500 border-2 border-orange-300 animate-bounce";
+
+            // If day (currentTime > 6 and < 18), lights off unless override
+            const isDay = currentTime > 6 && currentTime < 18;
+
+            if (isDay && !pole.manualOverride) {
+                return base + "bg-slate-700 border border-slate-600 opacity-20";
+            }
+
+            if (pole.manualOverride) {
+                // Manual Brightness
+                if (pole.manualOverride > 80) return base + "bg-green-400 shadow-[0_0_20px_rgba(74,222,128,1)]";
+                return base + "bg-indigo-400 opacity-80";
+            }
+
+            // Auto Night Behavior
+            if (pole.lux > 80) return base + "bg-green-400 shadow-[0_0_15px_rgba(74,222,128,0.8)]";
+            return base + "bg-indigo-500 opacity-50 shadow-[0_0_10px_rgba(99,102,241,0.3)]";
+        }
+
+        // --- INTERACTION ---
+        function selectPole(id) {
+            selectedPoleId = id;
+            const p = poles.find(x => x.id === id);
+
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('detail-content').classList.remove('hidden');
+            document.getElementById('detail-id').innerText = p.id;
+            document.getElementById('detail-battery-val').innerText = p.battery + '%';
+
+            // Status Badge
+            const badge = document.getElementById('detail-status-badge');
+            if (p.status === 'fault') {
+                badge.innerHTML = '<span class="px-3 py-1 rounded bg-red-100 text-red-700 text-xs font-bold border border-red-200">CRITICAL FAULT</span>';
+                document.getElementById('btn-maintain').disabled = false;
+            } else if (p.status === 'maintenance') {
+                badge.innerHTML = '<span class="px-3 py-1 rounded bg-orange-100 text-orange-700 text-xs font-bold border border-orange-200">MAINTENANCE IN PROGRESS</span>';
+                document.getElementById('btn-maintain').disabled = true;
+            } else {
+                badge.innerHTML = '<span class="px-3 py-1 rounded bg-green-100 text-green-700 text-xs font-bold border border-green-200">OPTIMAL</span>';
+                document.getElementById('btn-maintain').disabled = false;
+            }
+
+            // Slider State
+            const slider = document.getElementById('lux-slider');
+            if (p.manualOverride !== null) {
+                setMode('MANUAL', false);
+                slider.value = p.manualOverride;
+            } else {
+                setMode('AUTO', false);
+                slider.value = p.lux;
+            }
+
+            renderGrid();
+        }
+
+        function setMode(mode, updatePole = true) {
+            const btnAuto = document.getElementById('btn-auto');
+            const btnMan = document.getElementById('btn-manual');
+            const slider = document.getElementById('lux-slider');
+            const label = document.getElementById('lux-percent');
+
+            if (mode === 'AUTO') {
+                btnAuto.classList.replace('bg-indigo-50', 'bg-indigo-600');
+                btnAuto.classList.replace('text-indigo-700', 'text-white');
+                btnMan.classList.replace('bg-slate-800', 'bg-white'); // simplified logic
+
+                // Active State Styling
+                btnAuto.className = "flex-1 py-1.5 text-xs font-bold border border-indigo-600 bg-indigo-600 text-white rounded shadow-md transition-all";
+                btnMan.className = "flex-1 py-1.5 text-xs font-bold border border-slate-200 text-slate-500 rounded hover:bg-slate-50 transition-all";
+
+                slider.disabled = true;
+                slider.classList.add('opacity-50', 'cursor-not-allowed');
+                label.innerText = 'AUTO (AI)';
+
+                if (updatePole && selectedPoleId) {
+                    const p = poles.find(x => x.id === selectedPoleId);
+                    p.manualOverride = null;
+                    renderGrid();
+                }
+            } else {
+                // Manual
+                btnMan.className = "flex-1 py-1.5 text-xs font-bold border border-indigo-600 bg-indigo-600 text-white rounded shadow-md transition-all";
+                btnAuto.className = "flex-1 py-1.5 text-xs font-bold border border-slate-200 text-slate-500 rounded hover:bg-slate-50 transition-all";
+
+                slider.disabled = false;
+                slider.classList.remove('opacity-50', 'cursor-not-allowed');
+                label.innerText = 'MANUAL OVERRIDE';
+            }
+        }
+
+        // --- ACTIONS ---
+        document.getElementById('lux-slider').addEventListener('input', (e) => {
+            if (selectedPoleId) {
+                const val = e.target.value;
+                const p = poles.find(x => x.id === selectedPoleId);
+                p.manualOverride = parseInt(val);
+                p.lux = parseInt(val);
+                renderGrid();
+            }
+        });
+
+        document.getElementById('time-slider').addEventListener('input', (e) => {
+            updateTime(parseInt(e.target.value));
+        });
+
+        function updateTime(hour) {
+            currentTime = hour;
+            const label = document.getElementById('time-val');
+            label.innerText = (hour < 10 ? '0' + hour : hour) + ':00';
+
+            // Icon
+            const icon = document.getElementById('cycle-icon');
+            if (hour > 6 && hour < 18) {
+                icon.innerHTML = '<i data-lucide="sun" class="w-4 h-4 text-orange-400"></i>';
+                // Day Logic: Charge Battery
+                poles.forEach(p => {
+                    if (p.battery < 100) p.battery += 5;
+                });
+            } else {
+                icon.innerHTML = '<i data-lucide="moon" class="w-4 h-4 text-indigo-400"></i>';
+                // Night Logic: Drain Battery
+                poles.forEach(p => {
+                    const drain = p.lux > 80 ? 2 : 0.5;
+                    if (p.battery > 0) p.battery -= drain;
+                });
+            }
+            lucide.createIcons();
+            renderGrid();
+
+            // Update power stat
+            const baseLoad = hour > 6 && hour < 18 ? 0.2 : 12.4;
+            const pwr = document.getElementById('power-val');
+            if (pwr) pwr.innerText = baseLoad;
+        }
+
+        function triggerMaintenance() {
+            if (!selectedPoleId) return;
+            const p = poles.find(x => x.id === selectedPoleId);
+
+            p.status = 'maintenance';
+            renderGrid(); // Update grid and badge
+            selectPole(p.id); // Refresh sidebar
+
+            showToast(`Ticket #${Math.floor(Math.random() * 9000) + 1000} created. Tech notified.`);
+
+            // Simulated Fix
+            setTimeout(() => {
+                p.status = 'healthy';
+                p.battery = 100; // New battery
+                renderGrid();
+                if (selectedPoleId === p.id) selectPole(p.id);
+                showToast(`Maintenance Complete for ${p.id}`);
+            }, 5000);
+        }
+
+        function togglePower() {
+            showToast("Sending REBOOT signal via LoRaWAN...");
+            setTimeout(() => showToast("Device Rebooted Successfully"), 2000);
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            t.classList.remove('translate-y-24', 'opacity-0');
+            setTimeout(() => {
+                t.classList.add('translate-y-24', 'opacity-0');
+            }, 3000);
+        }
+
+        // --- SIMULATION LOOP ---
+        setInterval(() => {
+            // Random Activity
+            if (Math.random() > 0.7) {
+                const idx = Math.floor(Math.random() * GRID_SIZE);
+                const p = poles[idx];
+
+                // Only change if auto
+                if (!p.manualOverride && p.status === 'healthy') {
+                    // Motion?
+                    if (Math.random() > 0.7) p.lux = 100;
+                    else p.lux = 30;
+                }
+
+                // Random Battery Drain
+                if (p.battery > 0) p.battery -= 0.1;
+            }
+            renderGrid();
+        }, 1000);
+
+        init();
+        showView('map');
+    </script>
+</body>
+
+</html>
